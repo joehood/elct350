@@ -306,7 +306,16 @@ void Plotter::PrintEndMatter()
 
 void Plotter::Plot()
 {
-    chartfile.open(PLOTFILE);
+    string plotfile = DEFPLOTFILE;
+    
+    if (!title.empty())
+    {
+        plotfile = title;
+        replace(plotfile.begin(), plotfile.end(), ' ', '_');
+        plotfile += ".html";
+    }
+    
+    chartfile.open(plotfile);
     
     PrintFrontMatter();
     
