@@ -29,8 +29,9 @@ SOFTWARE.
 #include <cstdio>
 #include <string>
 #include <fstream>
+#include <algorithm>
 
-#define PLOTFILE "plot.html"
+#define DEFPLOTFILE "plot.html"
 
 using namespace std;
 
