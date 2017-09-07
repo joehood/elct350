@@ -1,5 +1,7 @@
 # ELCT 350 Code Library (UofSC EE Dept)
 
+## Example Usage of Matrix and Plotter
+
 ```cpp
 #include "Matrix.hpp"
 #include "Plotter.hpp"
