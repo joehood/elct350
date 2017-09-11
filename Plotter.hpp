@@ -281,6 +281,9 @@ void Plotter::PrintEndMatter()
     chartfile << "          width: " << width << "," << endl;
     chartfile << "          height: " << height << "," << endl;
     
+    // add first column label as x-axis label:
+    chartfile << "          hAxis: {title: data.getColumnLabel(0)}," << endl;
+    
     // Allow multiple simultaneous selections:
     chartfile << "          selectionMode: 'multiple',"  << endl;
     
