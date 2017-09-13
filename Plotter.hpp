@@ -42,6 +42,9 @@ public:
 
     Plotter(const char* title = "", int width = 600, int height = 300);
     
+    void SetTitle(const char* title);
+    void SetSize(int width, int height);
+    
     void AddRow(double x, double y);
     void AddRow(double x, double y1, double y2);
     void AddRow(double x, double y1, double y2, double y3);
@@ -104,6 +107,17 @@ Plotter::Plotter(const char* title, int width, int height)
     this->ydata = std::vector<std::vector<double> >(10);
     this->labels = std::vector<std::string>(10);
     this->curveCnt = 0;
+}
+
+void Plotter::SetTitle(const char* title)
+{
+    this->title = title;
+}
+
+void Plotter::SetSize(int width, int height)
+{
+    this->width = width;
+    this->height = height;
 }
 
 void Plotter::AddRow(double x, double y)
@@ -296,7 +310,16 @@ void Plotter::PrintEndMatter()
     chartfile << "          curveType: 'none'" << endl;
 
     chartfile << "        };" << endl;
+    
+    chartfile << "        var chart_div = document.getElementById('elct350output');" << endl;
     chartfile << "        var chart = new google.visualization.LineChart(document.getElementById('elct350output'));" << endl;
+    
+    // for extracting png image:
+    chartfile << "        google.visualization.events.addListener(chart, 'ready', function () {" << endl;
+    chartfile << "          chart_div.innerHTML = '<img src=\"' + chart.getImageURI() + '\">';" << endl;
+    chartfile << "        });" << endl;
+    
+    // draw chart and close the blocks
     chartfile << "        chart.draw(data, options);" << endl;
     chartfile << "      }" << endl;
     chartfile << "    </script>" << endl;
