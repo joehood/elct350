@@ -235,7 +235,6 @@ public:
         return matrix<T>(*this).operator*=(k);
     }
 
-
     ////////////////// Divide by scalar ///////////////////////
 
 
@@ -319,6 +318,11 @@ public:
     computes the inverse of this matrix
     **/
     matrix<T> GetInverse(const LU<T>& LUFactor) const;
+    
+    /**
+    computes the inverse of this matrix
+    **/
+    matrix<T> GetInverse() const;
 
     /**
     computes the LU factorization of the matrix
@@ -338,6 +342,11 @@ public:
     computes the result of a linear system given A, B, and LU Factors
     **/
     matrix<T> Solve(const matrix<T>& A, const matrix<T>& B, const LU<T>& LUFactor) const;
+
+    /**
+    solve linear system for A matrix given B vector, and LU Factors
+    **/
+    columnVector<T> Solve(const columnVector<T>& B, const LU<T>& LUFactor) const;
 
     /**
     computes the columnVector result of this linear system
@@ -948,9 +957,9 @@ template<class T> columnVector<T> matrix<T>::operator*(const columnVector<T>& B)
 
     for (int i = 1; i <= GetNumRows(); i++)
     {
-        for (int k = 1; k <= GetNumColumns(); k++)
+        for (int j = 1; j <= GetNumColumns(); j++)
         {
-            C.SetElement(i, 1, C.GetElement(i, 1) + GetElement(i, k) * B.GetElement(k, 1));
+            C(i) += GetElement(i, j) * B(j);
         }
     }
 
@@ -1027,11 +1036,11 @@ template<class T> matrix<T> matrix<T>::Partition(int afterWhichColumn)
 
 template<class T> rowVector<T> matrix<T>::ExtractRow(int row) const
 {
-    columnVector<T> R(GetNumColumns());
+    rowVector<T> R(GetNumColumns());
 
-    for (int i = 1; i <= GetNumColumns(); i++)
+    for (int j = 1; j <= GetNumColumns(); j++)
     {
-        R.SetElement(i, 1, GetElement(row, i));
+        R(j) = GetElement(row, j);
     }
     return R;
 }
@@ -1042,20 +1051,20 @@ template<class T> columnVector<T> matrix<T>::ExtractColumn(int column) const
 
     for (int i = 1; i <= GetNumRows(); i++)
     {
-        C.SetElement(1, i, GetElement(i, column));
+        C(i) = GetElement(i, column);
     }
     return C;
 }
 
 template<class T> matrix<T> matrix<T>::GetInverse(const matrix<T>& A, const LU<T>& LUFactor)
 {
-    matrix<T> identity(A.numRows, A.numColumns);
+    matrix<T> identity(A.GetNumRows(), A.GetNumColumns());
 
     identity.SetAsEye();
 
-    matrix<T> inverse(A.numRows, A.numColumns);
+    matrix<T> inverse(A.GetNumRows(), A.GetNumColumns());
 
-    for (int col = 1; col <= A.numColumns; col++)
+    for (int col = 1; col <= A.GetNumColumns(); col++)
     {
         inverse.ReplaceColumn(col, matrix::Solve(A, identity.ExtractColumn(col), LUFactor));
     }
@@ -1064,13 +1073,30 @@ template<class T> matrix<T> matrix<T>::GetInverse(const matrix<T>& A, const LU<T
 
 template<class T> matrix<T> matrix<T>::GetInverse(const LU<T>& LUFactor) const
 {
-    matrix<T> identity(numRows, numColumns);
+    matrix<T> identity(GetNumRows(), GetNumColumns());
 
     identity.SetAsEye();
 
-    matrix<T> inverse(numRows, numColumns);
+    matrix<T> inverse(GetNumRows(), GetNumColumns());
 
-    for (int col = 1; col <= numColumns; col++)
+    for (int col = 1; col <= GetNumColumns(); col++)
+    {
+        inverse.ReplaceColumn(col, Solve(identity.ExtractColumn(col), LUFactor));
+    }
+    return inverse;
+}
+
+template<class T> matrix<T> matrix<T>::GetInverse() const
+{
+    matrix<T> identity(GetNumRows(), GetNumColumns());
+
+    identity.SetAsEye();
+
+    matrix<T> inverse(GetNumRows(), GetNumColumns());
+    
+    LU<T> LUFactor = GetLU();
+
+    for (int col = 1; col <= GetNumColumns(); col++)
     {
         inverse.ReplaceColumn(col, Solve(identity.ExtractColumn(col), LUFactor));
     }
@@ -1147,7 +1173,7 @@ template<class T> LU<T> matrix<T>::GetLU() const
 
 template<class T> matrix<T> matrix<T>::operator^(const T e) const
 {
-    if (e == -1.0)
+    if ((double)e == -1.0)
     {
         LU<T> Factors = GetLU();
         return GetInverse(Factors);
@@ -1160,34 +1186,69 @@ template<class T> matrix<T> matrix<T>::operator^(const T e) const
 
 template<class T> matrix<T> matrix<T>::Solve(const matrix<T>& A, const matrix<T>& B, const LU<T>& LUFactor) const
 {
-    matrix<T> D = LUFactor.P * B;
+    columnVector<T> D = LUFactor.P * B;
 
-    matrix<T> Y(A.numRows, 1);
+    columnVector<T> Y(A.GetNumRows());
 
-    columnVector<T> X(A.numRows);
+    columnVector<T> X(A.GetNumRows());
 
-    for (int k = 1; k <= A.numRows; k++)
+    for (int k = 1; k <= A.GetNumRows(); k++)
     {
         T prodsum = 0;
 
         for (int i = 1; i <= k - 1; i++)
         {
-            prodsum += LUFactor.Q.GetElement(k, i) * Y.GetElement(i, 1);
+            prodsum += LUFactor.Q(k, i) * Y(i);
         }
 
-        Y.SetElement(k, 1, (D.GetElement(k, 1) - prodsum) / LUFactor.Q.GetElement(k, k));
+        Y(k) = (D(k) - prodsum) / LUFactor.Q(k, k);
     }
 
-    for (int k = A.numRows; k >= 1; k--)
+    for (int k = A.GetNumRows(); k >= 1; k--)
     {
         T prodsum = 0;
 
-        for (int i = k + 1; i <= A.numRows; i++)
+        for (int i = k + 1; i <= A.GetNumRows(); i++)
         {
-            prodsum += LUFactor.Q.GetElement(k, i) * X.GetElement(i, 1);
+            prodsum += LUFactor.Q(k, i) * X(i);
         }
 
-        X.SetElement(k, 1, Y.GetElement(k, 1) - prodsum);
+        X(k) = Y(k) - prodsum;
+    }
+
+    return X;
+}
+
+template<class T> columnVector<T> matrix<T>::Solve(const columnVector<T>& B, const LU<T>& LUFactor) const
+{
+    columnVector<T> D = LUFactor.P * B;
+
+    columnVector<T> Y(GetNumRows());
+
+    columnVector<T> X(GetNumRows());
+
+    for (int k = 1; k <= GetNumRows(); k++)
+    {
+        T prodsum = 0;
+
+        for (int i = 1; i <= k - 1; i++)
+        {
+            prodsum += LUFactor.Q(k, i) * Y(i);
+        }
+
+        Y(k) = (D(k) - prodsum) / LUFactor.Q(k, k);
+    }
+
+    for (int k = GetNumRows(); k >= 1; k--)
+    {
+        T prodsum = 0;
+
+        for (int i = k + 1; i <= GetNumRows(); i++)
+        {
+            prodsum += LUFactor.Q(k, i) * X(i);
+        }
+
+        X(k) = Y(k) - prodsum;
     }
 
     return X;
@@ -1197,34 +1258,34 @@ template<class T> columnVector<T> matrix<T>::LeftDivide(const columnVector<T>& B
 {
     LU<T> LUFactor = GetLU();
 
-    matrix<T> D = LUFactor.P * B;
+    columnVector<T> D = LUFactor.P * B;
 
-    columnVector<T> Y(numRows);
+    columnVector<T> Y(GetNumRows());
+    
+    columnVector<T> X(GetNumRows());
 
-    for (int k = 1; k <= numRows; k++)
+    for (int k = 1; k <= GetNumRows(); k++)
     {
         T prodsum = 0;
 
         for (int i = 1; i <= k - 1; i++)
         {
-            prodsum += LUFactor.Q.GetElement(k, i) * Y.GetElement(i, 1);
+            prodsum += LUFactor.Q(k, i) * Y(i);
         }
 
-        Y.SetElement(k, 1, (D.GetElement(k, 1) - prodsum) / LUFactor.Q.GetElement(k, k));
+        Y(k) = (D(k) - prodsum) / LUFactor.Q(k, k);
     }
 
-    columnVector<T> X(numRows);
-
-    for (int k = numRows; k >= 1; k--)
+    for (int k = GetNumRows(); k >= 1; k--)
     {
         T prodsum = 0;
 
-        for (int i = k + 1; i <= numRows; i++)
+        for (int i = k + 1; i <= GetNumRows(); i++)
         {
-            prodsum += LUFactor.Q.GetElement(k, i) * X(i);
+            prodsum += LUFactor.Q(k, i) * X(i);
         }
 
-        X.SetElement(k, 1, Y.GetElement(k, 1) - prodsum);
+        X(k) = Y(k) - prodsum;
     }
 
     return X;
@@ -1607,6 +1668,19 @@ template<class T> columnVector<T> LU<T>::Solve(const columnVector<T>& B) const
 
         X.SetElement(k, 1, Y.GetElement(k, 1) - prodsum);
     }
+}
+
+// Global functions:
+
+
+template<class T> matrix<T> operator*(const T k, const matrix<T>& A)
+{
+    return A * k;
+}
+
+template<class T> columnVector<T> operator*(const T k, const columnVector<T>& A)
+{
+    return A * k;
 }
 
 #endif
