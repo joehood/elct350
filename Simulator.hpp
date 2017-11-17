@@ -12,50 +12,64 @@ using std::vector;
 using std::string;
 using std::fmax;
 
-enum sourceType { DCSOURCE, SINESOURCE, SQUARESOURCE, TRISOURCE };
-
 class Simulator;
 
+/**
+Device base class. All devices should derive from this class and implement
+at least the Step() function.
+**/
 class Device
 {
     public:
 
     /////////////// Device Interface ///////////////
-
+    
     /**
-    This function is where you should do any pre-simulation set up. Also, you should
-    get and store integer values for internal nodes here with the GetNextNode() function
-    (example: nodep = GetNextNode())
-    */
-    virtual void Init();
-
-    /**
-    Stamps the DC model of the device for DC operating point calculation (optional,
-    default behavior is to call Step(0, 0)).
-    */
-    virtual void DC();
-
-    /**
-    Steps the device for transient analysis.
-    Its function is to implement the behavior needed for transient analysis (.trans).
-    It takes in the current time (s) and time step (s), and applies the stamps to the J
-    and B matrices accordingly
+    REQUIRED Steps the device for transient analysis.
+    Its function is to implement the behavior needed for transient analysis
+    (.trans). It takes in the current time (s) and time step (s), and applies
+    the stamps to the J and B matrices accordingly.
     @param t is the current simulation time in seconds
     @param dt is the current simulation time step in seconds
-    */
+    **/
     virtual void Step(double t, double dt);
 
     /**
-    Steps the device to update the simulator signals.
+    OPTIONAL This function is where you should do any pre-simulation set up.
+    Also, you should get and store integer values for internal nodes here with
+    the GetNextNode() function (example: nodep = GetNextNode())
+    **/
+    virtual void Init();
+
+    /**
+    OPTIONAL Stamps the DC model for the DC operating point calculation
+    (optional, default behavior is to call Step(0, 0)).
+    **/
+    virtual void DC();
+
+    /**
+    OPTIONAL Steps the device to update the simulator signals.
     It takes in the current time (s) and time step (s), and you should get and/or set
     signals her with the GetSignal() and SetSignal() function
     @param t is the current simulation time in seconds
     @param dt is the current simulation time step in seconds
-    */
+    **/
     virtual void SignalStep(double t, double dt);
 
 
     ///////////// End Device Interface /////////////
+    
+    
+    /*
+    Wrapper for const double Simulator::GetSignal(const int signal) const
+    */
+    double GetSignal(const int signal) const;
+
+    /*
+    Wrapper for Simulator::SetSignal(const int signal, const double value)
+    */
+    void SetSignal(const int signal, const double value);
+    
 
     // This function exists to set the parent simulator instance: 
     void SetSim(Simulator& sim);
@@ -127,18 +141,6 @@ class Device
     Wrapper for Simulator::AddBEquivalent(const int i, const double value)
     */
     void AddBEquivalent(const int i, const double value);     
-
-    ///////////////// Signal Solver interface //////////////////////
-
-    /*
-    Wrapper for const double Simulator::GetSignal(const int signal) const
-    */
-    double GetSignal(const int signal) const;
-
-    /*
-    Wrapper for Simulator::SetSignal(const int signal, const double value)
-    */
-    void SetSignal(const int signal, const double value);
 
 };
 
