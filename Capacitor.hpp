@@ -5,25 +5,25 @@ class Capacitor : public Device
 {
     public:
 
-    // constructor:
+    // Constructor:
+    
     Capacitor(int nodei, int nodej, double C);
 
-    // Device interface (must implement Step, but PostStep and DC are optional):
+    // Device interface:
+    
     void Step(double t, double dt);
     void DC();
 
-    // viewable accessors:
+    // Viewable functions:
+    
     double GetVoltage();
     double GetCurrent();
     double GetPower();
 
-    private:
-
-    // node indices:
+    // Member variables:
+    
     int nodei;
     int nodej;
-
-    // parameters:
     double C;
 };
 
@@ -36,25 +36,26 @@ Capacitor::Capacitor(int nodei, int nodej, double C)
 
 void Capacitor::Step(double t, double dt)
 {
-    double gc = C / dt;
-    double ic = C / dt * GetStateDifference(nodei, nodej);
+    double g = C / dt;
+    double b = g * GetStateDifference(nodei, nodej);  // g * v(t)
 
-    AddJacobian(nodei, nodei, gc);
-    AddJacobian(nodei, nodej, -gc);
-    AddJacobian(nodej, nodei, -gc);
-    AddJacobian(nodej, nodej, gc);
+    AddJacobian(nodei, nodei, g);
+    AddJacobian(nodei, nodej, -g);
+    AddJacobian(nodej, nodei, -g);
+    AddJacobian(nodej, nodej, g);
 
-    AddBEquivalent(nodei, ic);
-    AddBEquivalent(nodej, -ic);
+    AddBEquivalent(nodei, b);
+    AddBEquivalent(nodej, -b);
 }
 
 void Capacitor::DC()
 {
-    double gc = 1.0e-9;
-    AddJacobian(nodei, nodei, gc);
-    AddJacobian(nodei, nodej, -gc);
-    AddJacobian(nodej, nodei, -gc);
-    AddJacobian(nodej, nodej, gc);
+    // model open circuit with 0 conductance:
+    
+    AddJacobian(nodei, nodei, 0.0);
+    AddJacobian(nodei, nodej, 0.0);
+    AddJacobian(nodej, nodei, 0.0);
+    AddJacobian(nodej, nodej, 0.0);
 }
 
 double Capacitor::GetVoltage()
@@ -64,10 +65,11 @@ double Capacitor::GetVoltage()
 
 double Capacitor::GetCurrent()
 {
-    return C / GetTimeStep() * Capacitor::GetVoltage() - GetBEquivalent(nodei);
+    // current = g * v - b:
+    return C / GetTimeStep() * GetVoltage() - GetBEquivalent(nodei);
 }
 
 double Capacitor::GetPower()
 {
-    return Capacitor::GetVoltage() * Capacitor::GetCurrent();
+    return GetVoltage() * GetCurrent();
 }
