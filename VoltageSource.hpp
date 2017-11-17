@@ -5,53 +5,34 @@ class VoltageSource : public Device
 {
     public:
 
-    // Constructors:
+    // Constructor (Va, f, and phi are optional arguments):
 
-    // DC source constructor:
-    VoltageSource(int nodei, int nodej, double Vdc);
-
-    // SINE source constructor:
-    VoltageSource(int nodei, int nodej, double Vdc, double Va, double f, double phi);
+    VoltageSource(int nodei, int nodej, double Vdc, double Va=0.0, double f=0.0, double phi=0.0);
 
     // Device interface:
+    
     void Init();
     void DC();
     void Step(double t, double dt);
 
-    void SetVdc(double vdc);
-
-    // Viewable accessors:
+    // Viewable functions:
+    
     double GetVoltage();
     double GetCurrent();
     double GetPower();
 
-private:
-
-    // Node indices:
+    // Member Variables:
+    
     int nodei;
     int nodej;
-
-    // internal:
     int nodep;
-
-    // Parameters:
-    sourceType type;
     double Vdc;
     double Va;
     double f;
     double phi;
-    double R;
-    double L;
+
 };
 
-VoltageSource::VoltageSource(int nodei, int nodej, double Vdc)
-{
-    this->nodei = nodei;
-    this->nodej = nodej;
-    this->Vdc = Vdc;
-
-    this->type = DCSOURCE;
-}
 
 VoltageSource::VoltageSource(int nodei, int nodej, double Vdc, double Va, double f, double phi)
 {
@@ -61,44 +42,22 @@ VoltageSource::VoltageSource(int nodei, int nodej, double Vdc, double Va, double
     this->Va = Va;
     this->f = f;
     this->phi = phi;
-
-    this->type = SINESOURCE;
 }
 
 void VoltageSource::Init()
 {
+    // this is where and how to setup internal nodes:
     this->nodep = GetNextNode();
 }
 
 void VoltageSource::Step(double t, double dt)
 {
+    double v = Vdc + Va * sin(2.0 * M_PI * f * t + phi);
+    
     AddJacobian(nodei, nodep, -1.0);
     AddJacobian(nodej, nodep, 1.0);
     AddJacobian(nodep, nodei, -1.0);
     AddJacobian(nodep, nodej, 1.0);
-
-    double v = 0.0;
-
-    switch (type)
-    {
-
-    case DCSOURCE:
-        v = Vdc;
-        break;
-
-    case SINESOURCE:
-        v = Vdc + Va * sin(2.0 * M_PI * f * t + phi);
-        break;
-
-    case SQUARESOURCE:
-        //todo
-        break;
-
-    case TRISOURCE:
-        //todo
-        break;
-    }
-
     AddBEquivalent(nodep, v);
 }
 
@@ -108,13 +67,7 @@ void VoltageSource::DC()
     AddJacobian(nodej, nodep, 1.0);
     AddJacobian(nodep, nodei, -1.0);
     AddJacobian(nodep, nodej, 1.0);
-
     AddBEquivalent(nodep, Vdc);
-}
-
-void VoltageSource::SetVdc(double Vdc)
-{
-    this->Vdc = Vdc;
 }
 
 double VoltageSource::GetVoltage()
