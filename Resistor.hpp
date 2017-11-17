@@ -3,41 +3,40 @@
 
 class Resistor : public Device
 {
-public:
+    public:
 
-    // constructor:
+    // Constructor:
+    
     Resistor(int nodei, int nodej, double R);
 
-    // Device interface:
+    // Device interface (don't need Init() or DC() functions for resistor):
+    
     void Step(double t, double dt);
 
-    // viewable functions:
+    // Viewable functions:
+    
     double GetVoltage();
     double GetCurrent();
     double GetPower();
 
-//private:
+    // Member variables:
 
-    // node indices:
     int nodei;
     int nodej;
-
-    // parameters:
     double R;
+    double g;
 };
-
 
 Resistor::Resistor(int nodei, int nodej, double R)
 {
     this->nodei = nodei;
     this->nodej = nodej;
     this->R = R;
+    g = 1.0 / R;
 }
 
 void Resistor::Step(double t, double dt)
 {
-    double g = 1.0 / R;
-
     AddJacobian(nodei, nodei, g);
     AddJacobian(nodei, nodej, -g);
     AddJacobian(nodej, nodei, -g);
@@ -51,10 +50,10 @@ double Resistor::GetVoltage()
 
 double Resistor::GetCurrent()
 {
-    return Resistor::GetVoltage() / R;
+    return GetVoltage() * g;
 }
 
 double Resistor::GetPower()
 {
-    return Resistor::GetVoltage() * Resistor::GetCurrent();
+    return GetVoltage() * GetCurrent();
 }
