@@ -1,48 +1,67 @@
 # ELCT 350 Code Library (UofSC EE Dept)
 
-## Example Usage of Matrix and Plotter
+## Example Usage of Simulator and Plotter
 
 ```cpp
 #include "Matrix.hpp"
 #include "Plotter.hpp"
+#include "Simulator.hpp"
+
+#include "VoltageSource.hpp"
+#include "Resistor.hpp"
+#include "Capacitor.hpp"
+#include "Diode.hpp"
+
+/*
+
+Half-Wave Rectifier Circuit Example:
+                  
+     1       D1   2     R1    3
+     .------->|--------[ ]----.-------.
+    +|   +                    |       |    +
+ V1 (~)  vin              R2 [ ]  C1 ===  vout
+     |   -                    |       |    -
+     '------------------------'-------'
+                             ---  0
+                              '
+*/
 
 int main()
 {
-    Matrix A(2, 2);
-    ColumnVector B(2);
-    ColumnVector X(2);
+    int nodes = 3; // non-ground, external nodes
     
-    // 1. Constuct the plotter. Give it a title and (optional) width and height:
-    Plotter plotter("State Space Test", 600, 400);
+    Simulator simulator(nodes);
     
-    // 2. Set the curve labels. Pass in as many labels as the curves (up to 10):
-    plotter.SetLabels("Voltage (V)", "Current (A)");
+    VoltageSource V1(0, 1, 0.0, 10.0, 1.0e3); // ac voltage source
+    Diode D1(1, 2);
+    Resistor R1(2, 3, 1.0);
+    Resistor R2(3, 0, 10.0);
+    Capacitor C1(3, 0, 100.0e-6);
     
-    A(1, 1) = 0.0;
-    A(1, 2) = 1.0;
-    A(2, 1) = -2.0;
-    A(2, 2) = -1.0;
+    simulator.Add(V1);
+    simulator.Add(D1);
+    simulator.Add(R1);
+    simulator.Add(R2);
+    simulator.Add(C1);
     
-    B(1) = 0.0;
-    B(2) = 5.0;
+    simulator.Init(10e-6, 5e-3); // (dt, tmax)
     
-    double t = 0.0;
-    double tmax = 10.0;
-    double dt = 0.05;
-    double u = 10.0;
+    Plotter plotter("Half-wave Rectifier (Diode Test Circuit)");
+    plotter.SetLabels("vin (V)", "vout (V)");
     
-    while (t <= tmax)
+    // simulation loop:
+    
+    while(simulator.IsRunning())
     {
-        X += (A * X + B * u) * dt;
-        
-        // 3. In your simulation loop, add the data rows. Pass in the current
-        // time followed by the data points for each curve (up to 10 curves)
-        plotter.AddRow(t, X(1), X(2));
-        
-        t += dt;
+        plotter.AddRow(simulator.GetTime(), V1.GetVoltage(), R2.GetVoltage());
+        simulator.Step();
     }
     
-    // 4. Call Plot to finalize the plot and create the plot.html file
     plotter.Plot();
 }
 ```
+
+## Output
+
+![Rectifier Example Circuit Simulation Plot](rectifier_plot.png)
+
