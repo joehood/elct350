@@ -29,7 +29,7 @@ CCCS::CCCS(int nodem, int noden, int nodep, int nodeq, double gain)
 
 void CCCS::Init()
 {
-    // this is were we get and store the index of the internal node:
+    // this is where we get and store the index of the internal node:
     nodez = GetNextNode();
 }
 
