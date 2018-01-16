@@ -1,67 +1,59 @@
 # ELCT 350 Code Library (UofSC EE Dept)
 
-## Example Usage of Simulator and Plotter
+## Example Usage of Matrix and Plotter
 
 ```cpp
 #include "Matrix.hpp"
 #include "Plotter.hpp"
-#include "Simulator.hpp"
 
-#include "VoltageSource.hpp"
-#include "Resistor.hpp"
-#include "Capacitor.hpp"
-#include "Diode.hpp"
-
-/*
-
-Half-Wave Rectifier Circuit Example:
-                  
-     1       D1   2     R1    3
-     .------->|--------[ ]----.-------.
-    +|   +                    |       |    +
- V1 (~)  vin              R2 [ ]  C1 ===  vout
-     |   -                    |       |    -
-     '------------------------'-------'
-                             ---  0
-                              '
-*/
+using namespace std;
 
 int main()
 {
-    int nodes = 3; // non-ground, external nodes
+    // Circuit Parameters:
+    double Is = 10.0;
+    double R1 = 1.0;
+    double R2 = 10.0;
+    double L1 = 1.0e-3;
+    double C1 = 10.0e-6;
     
-    Simulator simulator(nodes);
+    // State Space Model:
+    Matrix A(2, 2);
+    ColumnVector B(2);
+    ColumnVector X(2);
     
-    VoltageSource V1(0, 1, 0.0, 10.0, 1.0e3); // ac voltage source
-    Diode D1(1, 2);
-    Resistor R1(2, 3, 1.0);
-    Resistor R2(3, 0, 10.0);
-    Capacitor C1(3, 0, 100.0e-6);
+    A(1, 1) = -1.0 / (R1*C1);
+    A(1, 2) = -1.0 / C1;
+    A(2, 1) = 1.0 / L1;
+    A(2, 2) = -R2  /L1;
     
-    simulator.Add(V1);
-    simulator.Add(D1);
-    simulator.Add(R1);
-    simulator.Add(R2);
-    simulator.Add(C1);
+    B(1) = 1.0 / C1;
+    B(2) = 0.0;
     
-    simulator.Init(10e-6, 5e-3); // (dt, tmax)
+    X(1) = 0.0; // initial vC
+    X(2) = 0.0; // initial iL
     
-    Plotter plotter("Half-wave Rectifier (Diode Test Circuit)");
-    plotter.SetLabels("vin (V)", "vout (V)");
+    A.Print();
+    B.Print();
     
-    // simulation loop:
+    double t = 0.0;
+    double tmax = 1.0e-3;
+    double h = 10.0e-6;
     
-    while(simulator.IsRunning())
+    Plotter plt("RLC Circuit State Space");
+    plt.SetLabels("iL");
+    
+    while(t <= tmax + h)
     {
-        plotter.AddRow(simulator.GetTime(), V1.GetVoltage(), R2.GetVoltage());
-        simulator.Step();
+        plt.AddRow(t, X(2));
+        
+        X += h * A * X + h * B * Is;
+        
+        t += h;
     }
     
-    plotter.Plot();
+    plt.Plot();
+
 }
 ```
-
-## Output
-
-![Rectifier Example Circuit Simulation Plot](rectifier_plot.png)
 
