@@ -54,10 +54,10 @@ void VoltageSource::Step(double t, double dt)
 {
     double v = Vdc + Va * sin(2.0 * M_PI * f * t + phi);
     
-    AddJacobian(nodei, nodep, -1.0);
-    AddJacobian(nodej, nodep, 1.0);
-    AddJacobian(nodep, nodei, -1.0);
-    AddJacobian(nodep, nodej, 1.0);
+    AddJacobian(nodei, nodep, 1.0);
+    AddJacobian(nodej, nodep, -1.0);
+    AddJacobian(nodep, nodei, 1.0);
+    AddJacobian(nodep, nodej, -1.0);
     AddBEquivalent(nodep, v);
 }
 
