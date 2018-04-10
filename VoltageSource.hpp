@@ -72,7 +72,7 @@ void VoltageSource::DC()
 
 double VoltageSource::GetVoltage()
 {
-    return GetStateDifference(nodej, nodei);
+    return GetStateDifference(nodei, nodej);
 }
 
 double VoltageSource::GetCurrent()
