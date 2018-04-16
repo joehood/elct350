@@ -342,7 +342,7 @@ void Plotter::Plot()
         plotfile += ".html";
     }
     
-    chartfile.open(plotfile);
+    chartfile.open(plotfile.c_str());
     
     PrintFrontMatter();
     
