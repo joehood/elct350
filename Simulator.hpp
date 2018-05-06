@@ -5,12 +5,14 @@
 #include <cstdio>
 #include <vector>
 #include <string>
+#include <cmath>
 
 #include "Matrix.hpp"
 
 using std::vector;
 using std::string;
-using std::fmax;
+using std::max;
+using std::abs;
 
 class Simulator;
 
@@ -589,7 +591,7 @@ void Simulator::Solve(bool dc)
 
         for (int i = 1; i <= nodes; i++)
         {
-            error = fmax(std::fabs(Xk(i) - Xkm1(i)), error);
+            error = max(abs(Xk(i) - Xkm1(i)), error);
         }
 
         if (error < tolerance)
